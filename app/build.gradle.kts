@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.andreasmichaelides.mastodonfeed"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -64,10 +64,9 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation("com.google.dagger:hilt-android:2.44")
-    kapt("com.google.dagger:hilt-android-compiler:2.44")
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.android.compiler)
     implementation(project(":api"))
-
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

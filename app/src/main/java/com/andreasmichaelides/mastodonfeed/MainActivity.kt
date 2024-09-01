@@ -13,7 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
-import com.andreasmichaelides.api.domain.MastodonRepository
+import com.andreasmichaelides.api.domain.GetFeetItemsUseCase
 import com.andreasmichaelides.mastodonfeed.ui.theme.MastodonFeedTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +24,8 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject lateinit var repository: MastodonRepository
+    @Inject
+    lateinit var getFeetItemsUseCase: GetFeetItemsUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,7 +34,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 try {
-                    repository.streamFeedItems().collect {
+                    getFeetItemsUseCase().collect {
                         Log.d("Pafto", "Item: $it")
                     }
                 } catch (e: Exception) {

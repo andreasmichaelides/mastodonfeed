@@ -1,11 +1,7 @@
 package com.andreasmichaelides.mastodonfeed.presentation
 
-import android.util.Log
 import com.andreasmichaelides.api.domain.FeedItem
 import java.time.Duration
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.temporal.TemporalUnit
 
 interface UiModel
 
@@ -19,6 +15,10 @@ interface Input<T : StateModel> {
     fun transform(stateModel: T): T
 }
 
+interface InputWithActions<T : StateModel, A : Action> : Input<T> {
+    fun getActionsExecutedAfterStateUpdate(): List<A>
+}
+
 data class FeedUiModel(
     val uiFeedItems: List<FeedItem>,
 ) : UiModel
@@ -27,7 +27,8 @@ data class FeedState(
     val feedItems: List<FeedItem>,
     val filteredFeedItems: List<FeedItem>,
     val filter: String,
-    val lifespanInSeconds: Long
+    val lifespanInSeconds: Long,
+    val isConnectedToTheInternet: Boolean
 ) : StateModel
 
 sealed interface FeedInput : Input<FeedState> {
@@ -56,19 +57,19 @@ sealed interface FeedInput : Input<FeedState> {
 
     data class RemoveExpiredFeedsInput(val currentTimeInMillis: Long) : FeedInput {
         override fun transform(stateModel: FeedState): FeedState {
-            val updatedFeedItems = stateModel.feedItems.filter {
+            return if (stateModel.isConnectedToTheInternet) {
+                val updatedFeedItems = stateModel.feedItems.filter {
+                    val expiryTimeInMillis = it.addedDateInMillis + Duration.ofSeconds(stateModel.lifespanInSeconds).toMillis()
+                    expiryTimeInMillis >= currentTimeInMillis
+                }
 
-                val expiryTimeInMillis = it.addedDateInMillis + Duration.ofSeconds(stateModel.lifespanInSeconds).toMillis()
-//                Log.d("Pafto", "Added date: ${it.addedDate} expiry $expiryDate")
-//                expiryDate.isAfter(timeNow)
-                expiryTimeInMillis >= currentTimeInMillis
+                stateModel.copy(
+                    feedItems = updatedFeedItems,
+                    filteredFeedItems = filterFeedItems(updatedFeedItems, stateModel.filter)
+                )
+            } else {
+                stateModel
             }
-
-
-            return stateModel.copy(
-                feedItems = updatedFeedItems,
-                filteredFeedItems = filterFeedItems(updatedFeedItems, stateModel.filter)
-            )
         }
     }
 
@@ -82,4 +83,23 @@ sealed interface FeedInput : Input<FeedState> {
                 )
             }
         }
+}
+
+sealed interface FeedInputWithActions : InputWithActions<FeedState, Action> {
+
+    data class OnInternetConnectionStateChanged(val isConnectedToTheInternet: Boolean) : FeedInputWithActions {
+        override fun getActionsExecutedAfterStateUpdate(): List<Action> {
+            return if (isConnectedToTheInternet) {
+                listOf(Action.LoadItems)
+            } else {
+                emptyList()
+            }
+        }
+
+        override fun transform(stateModel: FeedState): FeedState {
+            return stateModel.copy(
+                isConnectedToTheInternet = isConnectedToTheInternet
+            )
+        }
+    }
 }

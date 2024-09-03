@@ -1,9 +1,16 @@
 package com.andreasmichaelides.mastodonfeed
 
+import android.content.Context
+import android.net.ConnectivityManager
+import com.andreasmichaelides.mastodonfeed.data.NetworkConnectivityProviderImpl
+import com.andreasmichaelides.mastodonfeed.domain.AndroidNetworkConnectivityMonitor
+import com.andreasmichaelides.mastodonfeed.domain.NetworkConnectivityMonitor
+import com.andreasmichaelides.mastodonfeed.domain.NetworkConnectivityProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ActivityComponent
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.newSingleThreadContext
 import javax.inject.Qualifier
 import kotlin.coroutines.CoroutineContext
@@ -30,6 +37,21 @@ object MainActivityModule {
     @Provides
     fun provideLifeSpanInSecondsLong(): Long {
         return 10
+    }
+
+    @Provides
+    fun provideNetworkConnectivityMonitor(networkConnectivityMonitorImpl: AndroidNetworkConnectivityMonitor): NetworkConnectivityMonitor {
+        return networkConnectivityMonitorImpl
+    }
+
+    @Provides
+    fun provideNetworkConnectivityProvider(networkConnectivityProviderImpl: NetworkConnectivityProviderImpl): NetworkConnectivityProvider {
+        return networkConnectivityProviderImpl
+    }
+
+    @Provides
+    fun provideConnectivityManager(@ApplicationContext context: Context): ConnectivityManager {
+        return context.getSystemService(ConnectivityManager::class.java) as ConnectivityManager
     }
 
 }

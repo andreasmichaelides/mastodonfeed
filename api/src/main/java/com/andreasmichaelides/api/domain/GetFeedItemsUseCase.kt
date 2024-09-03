@@ -3,7 +3,7 @@ package com.andreasmichaelides.api.domain
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class GetFeetItemsUseCase @Inject constructor(
+class GetFeedItemsUseCase @Inject constructor(
     private val mastodonRepository: MastodonRepository
 ){
 

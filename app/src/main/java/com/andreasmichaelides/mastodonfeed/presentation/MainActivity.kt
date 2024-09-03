@@ -1,7 +1,6 @@
 package com.andreasmichaelides.mastodonfeed.presentation
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,20 +11,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.lifecycleScope
-import com.andreasmichaelides.api.domain.GetFeetItemsUseCase
+import com.andreasmichaelides.api.domain.GetFeedItemsUseCase
 import com.andreasmichaelides.mastodonfeed.ui.theme.MastodonFeedTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     @Inject
-    lateinit var getFeetItemsUseCase: GetFeetItemsUseCase
+    lateinit var getFeedItemsUseCase: GetFeedItemsUseCase
 
     @Inject
     lateinit var viewModel: MainActivityViewModel
@@ -46,7 +41,7 @@ class MainActivity : ComponentActivity() {
 //            }
 //        }
 
-        viewModel.loadFeedItemsStream()
+//        viewModel.loadFeedItemsStream()
 
         setContent {
             MastodonFeedTheme {

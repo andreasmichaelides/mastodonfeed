@@ -5,18 +5,18 @@ import androidx.lifecycle.viewModelScope
 import com.andreasmichaelides.api.domain.GetCurrentTimeInMillisUseCase
 import com.andreasmichaelides.api.domain.GetFeedItemsUseCase
 import com.andreasmichaelides.logger.domain.MastodonLogger
+import com.andreasmichaelides.mastodonfeed.ExpiredFeedsCheckDelayInSecondsDuration
+import com.andreasmichaelides.mastodonfeed.IoDispatcherCoroutineContext
 import com.andreasmichaelides.mastodonfeed.LifeSpanInSecondsLong
 import com.andreasmichaelides.mastodonfeed.ViewModelSingleThreadCoroutineContext
 import com.andreasmichaelides.mastodonfeed.domain.IsConnectedToTheInternetUseCase
 import com.andreasmichaelides.mastodonfeed.presentation.mapper.FeedStateToFeedUiModelMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -36,7 +36,9 @@ import kotlin.coroutines.CoroutineContext
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
     @ViewModelSingleThreadCoroutineContext coroutineContext: CoroutineContext,
+    @IoDispatcherCoroutineContext ioDispatcherCoroutineContext: CoroutineContext,
     @LifeSpanInSecondsLong lifeSpanInSeconds: Long,
+    @ExpiredFeedsCheckDelayInSecondsDuration expiredFeedsCheckDelayInSecondsDuration: Duration,
     private val getFeedItemsUseCase: GetFeedItemsUseCase,
     private val getCurrentTimeInMillisUseCase: GetCurrentTimeInMillisUseCase,
     private val isConnectedToTheInternetUseCase: IsConnectedToTheInternetUseCase,
@@ -53,31 +55,36 @@ class MainActivityViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             withContext(coroutineContext) {
-                input.map { action -> action to feedState.value }
-                    .map { it.first to it.first.transform(it.second) }
-                    .collect { updatedUiModel ->
-                        feedState.update { updatedUiModel.second }
+                input.collect { input ->
+                    mastodonLogger.logDebug(this@MainActivityViewModel, Thread.currentThread().name)
+                    // Updating the state with the newly transformed one
+                    feedState.update { input.transform(it) }
 
-                        if (updatedUiModel.first is InputWithActions<*, *>) {
-                            val inputWithActions = updatedUiModel.first as InputWithActions<*, *>
-                            inputWithActions.getActionsExecutedAfterStateUpdate().forEach {
-                                action.emit(it)
-                            }
+                    // Executing any actions, that are the outcome of the Input, after the State has been updated
+                    if (input is InputWithActions<*, *>) {
+                        val inputWithActions = input as InputWithActions<*, *>
+                        inputWithActions.getActionsExecutedAfterStateUpdate().forEach {
+                            action.emit(it)
                         }
                     }
-            }
-        }
-        viewModelScope.launch {
-            withContext(coroutineContext) {
-                feedState.map { feedStateToFeedUiModelMapper(it) }
-                    .collect { updatedUiModel ->
-                    uiModelStateFlow.update { updatedUiModel }
                 }
             }
         }
 
+        // Whenever the viewModel state is updated, then the UiModel will update too
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(coroutineContext) {
+                feedState.map { feedStateToFeedUiModelMapper(it) }
+                    .collect { updatedUiModel ->
+                        uiModelStateFlow.update { updatedUiModel }
+                    }
+            }
+        }
+
+        // The getFeedItemsUseCase can run on a separate thread, to perform its network task. The result will be handled
+        // by the input on the viewModel flow
+        viewModelScope.launch {
+            withContext(ioDispatcherCoroutineContext) {
                 action.filter { it is Action.LoadItems }
                     .flatMapLatest {
                         getFeedItemsUseCase()
@@ -88,7 +95,10 @@ class MainActivityViewModel @Inject constructor(
                             .retryWhen { cause, _ ->
                                 mastodonLogger.logError(this@MainActivityViewModel, "GetFeedItemsUseCase error: $cause")
                                 val retryIfIsSocketTimeoutException = cause is IllegalStateException
-                                mastodonLogger.logDebug(this@MainActivityViewModel, "GetFeedItemsUseCase will retry: $retryIfIsSocketTimeoutException")
+                                mastodonLogger.logDebug(
+                                    this@MainActivityViewModel,
+                                    "GetFeedItemsUseCase will retry: $retryIfIsSocketTimeoutException"
+                                )
                                 retryIfIsSocketTimeoutException
                             }
                             .onCompletion { mastodonLogger.logDebug(this@MainActivityViewModel, "GetFeedItemsUseCase flow completed") }
@@ -99,12 +109,13 @@ class MainActivityViewModel @Inject constructor(
             }
         }
 
+        // A very basic flow that emits depending on the duration provided, to remove the expired Feeds
         viewModelScope.launch {
             withContext(coroutineContext) {
                 flow {
                     while (true) {
                         emit(Unit)
-                        delay(Duration.ofSeconds(1))
+                        delay(expiredFeedsCheckDelayInSecondsDuration)
                     }
                 }.collect {
                     input.emit(FeedInput.RemoveExpiredFeedsInput(getCurrentTimeInMillisUseCase()))
@@ -113,11 +124,13 @@ class MainActivityViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            isConnectedToTheInternetUseCase()
-                .onEach { mastodonLogger.logDebug(this@MainActivityViewModel, "isConnectedToTheInternetUseCase: $it") }
-                .collect { isConnected ->
-                    input.emit(FeedInputWithActions.OnInternetConnectionStateChanged(isConnectedToTheInternet = isConnected))
-                }
+            withContext(coroutineContext) {
+                isConnectedToTheInternetUseCase()
+                    .onEach { mastodonLogger.logDebug(this@MainActivityViewModel, "isConnectedToTheInternetUseCase: $it") }
+                    .collect { isConnected ->
+                        input.emit(FeedInputWithActions.OnInternetConnectionStateChanged(isConnectedToTheInternet = isConnected))
+                    }
+            }
         }
     }
 

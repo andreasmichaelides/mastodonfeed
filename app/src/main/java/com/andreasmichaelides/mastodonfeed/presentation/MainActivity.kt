@@ -2,6 +2,7 @@ package com.andreasmichaelides.mastodonfeed.presentation
 
 import android.R
 import android.os.Bundle
+import android.text.Spanned
 import android.text.util.Linkify
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -35,7 +36,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.text.parseAsHtml
+import androidx.core.text.toSpanned
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.andreasmichaelides.mastodonfeed.ui.theme.MastodonFeedTheme
@@ -125,7 +126,7 @@ private fun FeedItemsListComponent(modifier: Modifier = Modifier, feedItems: Lis
                             Greeting(name = feedItem.userName)
                         }
                     }
-                    HtmlContentView(modifier, feedItem.content)
+                    HtmlContentComponent(modifier, feedItem.content)
                 }
             }
         }
@@ -133,7 +134,7 @@ private fun FeedItemsListComponent(modifier: Modifier = Modifier, feedItems: Lis
 }
 
 @Composable
-private fun HtmlContentView(modifier: Modifier, content: String) {
+private fun HtmlContentComponent(modifier: Modifier, content: Spanned) {
     AndroidView(
         modifier = modifier,
         factory = {
@@ -144,7 +145,7 @@ private fun HtmlContentView(modifier: Modifier, content: String) {
             }
         },
         update = {
-            it.text = content.parseAsHtml()
+            it.text = content
         }
     )
 }
@@ -158,7 +159,7 @@ fun GreetingPreview() {
             feedItems = listOf(
                 UiFeedItem(
                     displayName = "Tester",
-                    content = "some Content",
+                    content = "Some Content".toSpanned(),
                     avatarUrl = "",
                     userName = "MegaMan"
                 )

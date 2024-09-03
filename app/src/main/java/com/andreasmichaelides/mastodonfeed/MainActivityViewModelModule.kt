@@ -9,10 +9,11 @@ import com.andreasmichaelides.mastodonfeed.domain.NetworkConnectivityProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ActivityComponent
 import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.newSingleThreadContext
+import java.time.Duration
 import javax.inject.Qualifier
 import kotlin.coroutines.CoroutineContext
 
@@ -24,19 +25,40 @@ annotation class ViewModelSingleThreadCoroutineContext
 @Retention(AnnotationRetention.BINARY)
 annotation class LifeSpanInSecondsLong
 
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ExpiredFeedsCheckDelayInSecondsDuration
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class IoDispatcherCoroutineContext
+
 @Module
 @InstallIn(ViewModelComponent::class)
 object MainActivityModule {
 
+    // Creating a single thread coroutineContext, to run our main Viewmodel Flow which handles the inputs, in series, to avoid any
+    // race conditions and also to run code separate from the Main thread
     @ViewModelSingleThreadCoroutineContext
     @Provides
     fun provideRepositoryScope(): CoroutineContext {
         return newSingleThreadContext("ViewModelThread")
     }
 
-    /**
-     * Change to alter the lifespan of each Feed item
-     */
+    @IoDispatcherCoroutineContext
+    @Provides
+    fun provideIoDispatcherCoroutineContext(): CoroutineContext {
+        return Dispatchers.IO
+    }
+
+    // Change to alter the lifespan of each Feed item
+    @ExpiredFeedsCheckDelayInSecondsDuration
+    @Provides
+    fun provideExpiredFeedsCheckDelayInSecondsDuration(): Duration {
+        return Duration.ofSeconds(1)
+    }
+
+    // Change to alter the frequency of expired feeds check
     @LifeSpanInSecondsLong
     @Provides
     fun provideLifeSpanInSecondsLong(): Long {

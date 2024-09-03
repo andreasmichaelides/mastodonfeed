@@ -8,10 +8,12 @@ import com.andreasmichaelides.api.domain.GetFeedItemsUseCase
 import com.andreasmichaelides.mastodonfeed.LifeSpanInSecondsLong
 import com.andreasmichaelides.mastodonfeed.ViewModelSingleThreadCoroutineContext
 import com.andreasmichaelides.mastodonfeed.domain.IsConnectedToTheInternetUseCase
+import com.andreasmichaelides.mastodonfeed.presentation.mapper.FeedStateToFeedUiModelMapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
@@ -34,6 +36,7 @@ class MainActivityViewModel @Inject constructor(
     private val getFeedItemsUseCase: GetFeedItemsUseCase,
     private val getCurrentTimeInMillisUseCase: GetCurrentTimeInMillisUseCase,
     private val isConnectedToTheInternetUseCase: IsConnectedToTheInternetUseCase,
+    private val feedStateToFeedUiModelMapper: FeedStateToFeedUiModelMapper,
 ) : ViewModel() {
 
     private val input = MutableSharedFlow<Input<FeedState>>()
@@ -47,8 +50,8 @@ class MainActivityViewModel @Inject constructor(
             isConnectedToTheInternet = false
         )
     )
-    private val uiModelStateFlow = MutableStateFlow(FeedUiModel(emptyList()))
-    val uiModel = uiModelStateFlow.asStateFlow()
+    private val uiModelStateFlow = MutableStateFlow(FeedUiModel(emptyList(), searchFilter = ""))
+    val uiModel: StateFlow<FeedUiModel> = uiModelStateFlow.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -69,11 +72,9 @@ class MainActivityViewModel @Inject constructor(
         }
         viewModelScope.launch {
             withContext(coroutineContext) {
-                feedState.map {
-                    // TODO map ModelState to UiState
-                    FeedUiModel(it.feedItems)
-                }.collect {
-                    Log.d("Pafto", "Item: ${it.uiFeedItems.size}")
+                feedState.map { feedStateToFeedUiModelMapper(it) }
+                    .collect { updatedUiModel ->
+                    uiModelStateFlow.update { updatedUiModel }
                 }
             }
         }
@@ -113,6 +114,15 @@ class MainActivityViewModel @Inject constructor(
                 .collect { isConnected ->
                     input.emit(FeedInputWithActions.OnInternetConnectionStateChanged(isConnectedToTheInternet = isConnected))
                 }
+        }
+    }
+
+    fun onSearch(filter: String) {
+        viewModelScope.launch {
+            withContext(coroutineContext) {
+                input.emit(FeedInput.SearchInput(filter))
+            }
+
         }
     }
 }

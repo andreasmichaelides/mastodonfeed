@@ -65,7 +65,10 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.hilt.android)
+    implementation(libs.androidx.lifecycle.runtime.compose.android)
+    implementation(libs.google.material)
     kapt(libs.hilt.android.compiler)
+    implementation("io.coil-kt:coil-compose:2.7.0")
     implementation(project(":api"))
 
     testImplementation(libs.junit)

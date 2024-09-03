@@ -12,6 +12,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ActivityComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.newSingleThreadContext
+import java.time.Duration
 import javax.inject.Qualifier
 import kotlin.coroutines.CoroutineContext
 
@@ -36,7 +37,7 @@ object MainActivityModule {
     @LifeSpanInSecondsLong
     @Provides
     fun provideLifeSpanInSecondsLong(): Long {
-        return 10
+        return 5 * 60
     }
 
     @Provides

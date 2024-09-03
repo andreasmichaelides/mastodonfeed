@@ -20,7 +20,8 @@ interface InputWithActions<T : StateModel, A : Action> : Input<T> {
 }
 
 data class FeedUiModel(
-    val uiFeedItems: List<FeedItem>,
+    val uiFeedItems: List<UiFeedItem>,
+    val searchFilter: String
 ) : UiModel
 
 data class FeedState(
@@ -49,7 +50,7 @@ sealed interface FeedInput : Input<FeedState> {
     data class SearchInput(val filter: String) : FeedInput {
         override fun transform(stateModel: FeedState): FeedState {
             return stateModel.copy(
-                filter = filter,
+                filter = filter.trim(),
                 filteredFeedItems = filterFeedItems(stateModel.feedItems, filter)
             )
         }
@@ -77,10 +78,11 @@ sealed interface FeedInput : Input<FeedState> {
         if (filter.isEmpty()) {
             feedItems
         } else {
+            val lowerCaseFilter = filter.lowercase()
             feedItems.filter {
-                it.content.contains(filter) || it.userName.contains(filter) || it.displayName.contains(
-                    filter
-                )
+                it.content.lowercase().contains(lowerCaseFilter)
+                        || it.userName.lowercase().contains(lowerCaseFilter)
+                        || it.displayName.lowercase().contains(lowerCaseFilter)
             }
         }
 }

@@ -1,4 +1,4 @@
-package com.andreasmichaelides.mastodonfeed
+package com.andreasmichaelides.mastodonfeed.presentation
 
 import android.os.Bundle
 import android.util.Log
@@ -27,21 +27,26 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var getFeetItemsUseCase: GetFeetItemsUseCase
 
+    @Inject
+    lateinit var viewModel: MainActivityViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                try {
-                    getFeetItemsUseCase().collect {
-                        Log.d("Pafto", "Item: $it")
-                    }
-                } catch (e: Exception) {
-                    Log.d("Pafto", e.toString())
-                }
-            }
-        }
+//        lifecycleScope.launch {
+//            withContext(Dispatchers.IO) {
+//                try {
+//                    getFeetItemsUseCase().collect {
+//                        Log.d("Pafto", "Item: $it")
+//                    }
+//                } catch (e: Exception) {
+//                    Log.d("Pafto", e.toString())
+//                }
+//            }
+//        }
+
+        viewModel.loadFeedItemsStream()
 
         setContent {
             MastodonFeedTheme {

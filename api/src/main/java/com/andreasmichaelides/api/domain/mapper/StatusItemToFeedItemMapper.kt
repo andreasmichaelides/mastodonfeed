@@ -2,9 +2,11 @@ package com.andreasmichaelides.api.domain.mapper
 
 import com.andreasmichaelides.api.domain.FeedItem
 import com.andreasmichaelides.api.domain.StatusItem
+import com.andreasmichaelides.api.domain.TimeProvider
+import java.time.LocalDateTime
 import javax.inject.Inject
 
-class StatusItemToFeedItemMapper @Inject constructor() {
+class StatusItemToFeedItemMapper @Inject constructor(private val timeProvider: TimeProvider) {
 
     operator fun invoke(status: StatusItem): FeedItem {
         return FeedItem(
@@ -15,7 +17,8 @@ class StatusItemToFeedItemMapper @Inject constructor() {
             avatarUrl = status.avatarUrl,
             imageUrl = status.imageUrl,
             linkUrl = status.linkUrl,
-            createdDate = status.createdDate
+            createdDate = status.createdDate,
+            addedDateInMillis = timeProvider.getCurrentTimeInMillis()
         )
     }
 

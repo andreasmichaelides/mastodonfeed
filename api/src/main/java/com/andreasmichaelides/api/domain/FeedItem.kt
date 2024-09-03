@@ -10,5 +10,6 @@ data class FeedItem(
     val avatarUrl: String,
     val imageUrl: String,
     val linkUrl: String,
-    val createdDate: LocalDate
+    val createdDate: LocalDate,
+    val addedDateInMillis: Long
 )

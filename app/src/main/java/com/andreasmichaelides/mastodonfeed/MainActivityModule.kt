@@ -10,9 +10,9 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ActivityComponent
+import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.newSingleThreadContext
-import java.time.Duration
 import javax.inject.Qualifier
 import kotlin.coroutines.CoroutineContext
 
@@ -25,7 +25,7 @@ annotation class ViewModelSingleThreadCoroutineContext
 annotation class LifeSpanInSecondsLong
 
 @Module
-@InstallIn(ActivityComponent::class)
+@InstallIn(ViewModelComponent::class)
 object MainActivityModule {
 
     @ViewModelSingleThreadCoroutineContext
@@ -34,10 +34,13 @@ object MainActivityModule {
         return newSingleThreadContext("ViewModelThread")
     }
 
+    /**
+     * Change to alter the lifespan of each Feed item
+     */
     @LifeSpanInSecondsLong
     @Provides
     fun provideLifeSpanInSecondsLong(): Long {
-        return 5 * 60
+        return 1 * 60
     }
 
     @Provides

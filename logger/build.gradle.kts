@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.andreasmichaelides.api"
+    namespace = "com.andreasmichaelides.logger"
     compileSdk = 34
 
     defaultConfig {
@@ -32,11 +32,17 @@ android {
 }
 
 dependencies {
+
     implementation(libs.androidx.core.ktx)
-    implementation(libs.bigbone)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)
-    implementation(project(":logger"))
+
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }
 
 kapt {

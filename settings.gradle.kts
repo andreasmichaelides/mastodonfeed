@@ -23,3 +23,4 @@ dependencyResolutionManagement {
 rootProject.name = "Mastodon Feed"
 include(":app")
 include(":api")
+include(":logger")

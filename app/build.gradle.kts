@@ -70,6 +70,7 @@ dependencies {
     kapt(libs.hilt.android.compiler)
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation(project(":api"))
+    implementation(project(":logger"))
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

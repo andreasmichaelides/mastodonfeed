@@ -4,6 +4,7 @@ import com.andreasmichaelides.api.MastodonAccessTokenString
 import com.andreasmichaelides.api.MastodonInstanceNameString
 import com.andreasmichaelides.api.domain.StatusItem
 import com.andreasmichaelides.api.domain.mapper.StatusToFeedItemMapper
+import com.andreasmichaelides.logger.domain.MastodonLogger
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -18,9 +19,12 @@ class MastodonServiceImpl @Inject constructor(
     @MastodonInstanceNameString private val instanceName: String,
     @MastodonAccessTokenString private val accessToken: String,
     private val statusToFeedItemMapper: StatusToFeedItemMapper,
+    private val mastodonLogger: MastodonLogger,
 ) : MastodonService {
 
     override fun getPublicStream(): Flow<StatusItem> {
+
+        // Using callbackFlow, to wrap the callback from the library and handle its state, when the flow is completed
         return callbackFlow {
             try {
                 val client = MastodonClient.Builder(instanceName)
@@ -31,15 +35,17 @@ class MastodonServiceImpl @Inject constructor(
                     onlyMedia = false,
                     callback = {
                         when (it) {
-                            is TechnicalEvent -> when (it) {
-                                is TechnicalEvent.Closed -> close()
-                                is TechnicalEvent.Closing -> {}
-                                is TechnicalEvent.Failure -> close()
-                                TechnicalEvent.Open -> {}
+                            is TechnicalEvent -> {
+                                mastodonLogger.logDebug(this@MastodonServiceImpl, "TechnicalEvent: $it")
+                                when (it) {
+                                    is TechnicalEvent.Closed,
+                                    is TechnicalEvent.Failure -> close()
+                                    else -> Unit
+                                }
                             }
 
                             is MastodonApiEvent -> when (it) {
-                                is MastodonApiEvent.GenericMessage -> println("GenericMessage: $it")
+                                is MastodonApiEvent.GenericMessage -> mastodonLogger.logDebug(this@MastodonServiceImpl, "Generic message: $it")
                                 is MastodonApiEvent.StreamEvent -> {
                                     when (it.event) {
                                         is ParsedStreamEvent.StatusCreated -> {
@@ -49,7 +55,7 @@ class MastodonServiceImpl @Inject constructor(
                                         }
 
                                         else -> {
-                                            // TODO log
+                                            mastodonLogger.logDebug(this@MastodonServiceImpl, "Received other event: ${it.event}")
                                         }
                                     }
                                 }
@@ -58,10 +64,14 @@ class MastodonServiceImpl @Inject constructor(
                     }
                 )
 
-                awaitClose { closeable.close() }
+                awaitClose {
+                    closeable.close()
+                    mastodonLogger.logDebug(this@MastodonServiceImpl, "Closed")
+                }
             } catch (cancellationException: CancellationException) {
                 throw cancellationException
             } catch (exception: Exception) {
+                mastodonLogger.logError(this@MastodonServiceImpl, exception)
                 println("Exception event: $exception")
                 error(exception)
             }

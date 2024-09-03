@@ -105,3 +105,13 @@ sealed interface FeedInputWithActions : InputWithActions<FeedState, Action> {
         }
     }
 }
+
+fun getInitialFeedState(lifeSpanInSeconds: Long) = FeedState(
+    feedItems = emptyList(),
+    filteredFeedItems = emptyList(),
+    filter = "",
+    lifespanInSeconds = lifeSpanInSeconds,
+    isConnectedToTheInternet = false
+)
+
+fun getInitialFeedState() = FeedUiModel(uiFeedItems = emptyList(), searchFilter = "")

@@ -14,28 +14,17 @@ class AndroidNetworkConnectivityMonitor @Inject constructor(
 ) : NetworkConnectivityMonitor {
 
     private fun createNetworkCallback(isNetworkAvailableFlow: MutableStateFlow<Boolean>) = object : ConnectivityManager.NetworkCallback() {
-        // network is available for use
+
         override fun onAvailable(network: Network) {
             super.onAvailable(network)
             isNetworkAvailableFlow.update { true }
         }
 
-        // Network capabilities have changed for the network
-        //        override fun onCapabilitiesChanged(
-        //            network: Network,
-        //            networkCapabilities: NetworkCapabilities
-        //        ) {
-        //            super.onCapabilitiesChanged(network, networkCapabilities)
-        //            val unmetered = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-        //        }
-
-        // lost network connection
         override fun onLost(network: Network) {
             super.onLost(network)
             isNetworkAvailableFlow.update { false }
         }
     }
-
 
     override fun isConnectedToTheInternet(): Flow<Boolean> {
         val networkRequest = NetworkRequest.Builder()

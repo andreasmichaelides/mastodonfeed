@@ -7,7 +7,7 @@ class IsConnectedToTheInternetUseCase @Inject constructor(
     private val networkConnectivityProvider: NetworkConnectivityProvider
 ) {
 
-    suspend operator fun invoke(): Flow<Boolean> {
+    operator fun invoke(): Flow<Boolean> {
         return networkConnectivityProvider.isConnectedToTheInternet()
     }
 

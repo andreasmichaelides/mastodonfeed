@@ -49,9 +49,10 @@ sealed interface FeedInput : Input<FeedState> {
 
     data class SearchInput(val filter: String) : FeedInput {
         override fun transform(stateModel: FeedState): FeedState {
+            val trimmedFilter = filter.trim()
             return stateModel.copy(
-                filter = filter.trim(),
-                filteredFeedItems = filterFeedItems(stateModel.feedItems, filter)
+                filter = trimmedFilter,
+                filteredFeedItems = filterFeedItems(stateModel.feedItems, trimmedFilter)
             )
         }
     }
@@ -106,7 +107,7 @@ sealed interface FeedInputWithActions : InputWithActions<FeedState, Action> {
     }
 }
 
-fun getInitialFeedState(lifeSpanInSeconds: Long) = FeedState(
+fun getInitialFeedStateModel(lifeSpanInSeconds: Long) = FeedState(
     feedItems = emptyList(),
     filteredFeedItems = emptyList(),
     filter = "",
@@ -114,4 +115,4 @@ fun getInitialFeedState(lifeSpanInSeconds: Long) = FeedState(
     isConnectedToTheInternet = false
 )
 
-fun getInitialFeedState() = FeedUiModel(uiFeedItems = emptyList(), searchFilter = "")
+fun getInitialFeedUiModel() = FeedUiModel(uiFeedItems = emptyList(), searchFilter = "")

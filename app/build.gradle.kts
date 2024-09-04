@@ -73,6 +73,10 @@ dependencies {
     implementation(project(":logger"))
 
     testImplementation(libs.junit)
+    testImplementation("app.cash.turbine:turbine:1.1.0")
+    testImplementation ("io.mockk:mockk:1.13.12")
+    testImplementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.1")
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

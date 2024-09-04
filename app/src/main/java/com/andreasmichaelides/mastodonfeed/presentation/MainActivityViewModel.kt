@@ -48,15 +48,14 @@ class MainActivityViewModel @Inject constructor(
 
     private val input = MutableSharedFlow<Input<FeedState>>()
     private val action = MutableSharedFlow<Action>()
-    private val feedState = MutableStateFlow(getInitialFeedState(lifeSpanInSeconds))
-    private val uiModelStateFlow = MutableStateFlow(getInitialFeedState())
+    private val feedState = MutableStateFlow(getInitialFeedStateModel(lifeSpanInSeconds))
+    private val uiModelStateFlow = MutableStateFlow(getInitialFeedUiModel())
     val uiModel: StateFlow<FeedUiModel> = uiModelStateFlow.asStateFlow()
 
     init {
         viewModelScope.launch {
             withContext(coroutineContext) {
                 input.collect { input ->
-                    mastodonLogger.logDebug(this@MainActivityViewModel, Thread.currentThread().name)
                     // Updating the state with the newly transformed one
                     feedState.update { input.transform(it) }
 
@@ -110,12 +109,13 @@ class MainActivityViewModel @Inject constructor(
         }
 
         // A very basic flow that emits depending on the duration provided, to remove the expired Feeds
+        // Ideally this can be extracted to an extension function, or it can be injected
         viewModelScope.launch {
             withContext(coroutineContext) {
                 flow {
                     while (true) {
-                        emit(Unit)
                         delay(expiredFeedsCheckDelayInSecondsDuration)
+                        emit(Unit)
                     }
                 }.collect {
                     input.emit(FeedInput.RemoveExpiredFeedsInput(getCurrentTimeInMillisUseCase()))
